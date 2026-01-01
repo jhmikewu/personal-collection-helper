@@ -11,7 +11,10 @@ from collection_helper.logger import setup_logging, get_logger
 from collection_helper.core.manager import MediaManager
 
 # Setup logging
-setup_logging()
+try:
+    setup_logging()
+except Exception as e:
+    print(f"Warning: Could not setup logging: {e}")
 logger = get_logger()
 
 
@@ -197,11 +200,20 @@ if __name__ == "__main__":
 def run_server():
     """Run the FastAPI server - called from startup script."""
     import uvicorn
+    import sys
 
     settings = get_settings()
-    uvicorn.run(
-        app,
-        host=settings.host,
-        port=settings.port,
-        log_level=settings.log_level.lower(),
-    )
+
+    logger.info(f"Starting Personal Collection Helper API on {settings.host}:{settings.port}")
+    logger.info(f"API documentation available at: http://{settings.host}:{settings.port}/docs")
+
+    try:
+        uvicorn.run(
+            app,
+            host=settings.host,
+            port=settings.port,
+            log_level=settings.log_level.lower(),
+        )
+    except Exception as e:
+        logger.error(f"Failed to start server: {e}")
+        sys.exit(1)

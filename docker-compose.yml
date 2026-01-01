@@ -11,6 +11,8 @@ services:
       - BOOKLORE_URL=${BOOKLORE_URL:-http://localhost:6060}
       - BOOKLORE_API_KEY=${BOOKLORE_API_KEY:-}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PORT=8090
+      - HOST=0.0.0.0
     volumes:
       - ./config:/app/config
       - ./logs:/app/logs

@@ -72,11 +72,14 @@ class EmbyClient:
             List of Emby libraries
         """
         try:
-            data = await self._request("GET", "/Items")
+            # Get all items and filter for CollectionFolder type
+            params = {
+                "Recursive": True,
+                "IncludeItemTypes": "CollectionFolder",
+            }
+            data = await self._request("GET", "/Users/Me/Items", params=params)
             items = data.get("Items", [])
-            libraries = [
-                EmbyLibrary(**item) for item in items if item.get("Type") == "CollectionFolder"
-            ]
+            libraries = [EmbyLibrary(**item) for item in items]
             logger.info(f"Retrieved {len(libraries)} libraries from Emby")
             return libraries
         except Exception as e:
