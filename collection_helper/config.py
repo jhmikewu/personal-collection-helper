@@ -15,11 +15,11 @@ class Settings(BaseSettings):
     )
 
     # Emby Configuration
-    emby_url: str
-    emby_api_key: str
+    emby_url: Optional[str] = None
+    emby_api_key: Optional[str] = None
 
     # Booklore Configuration
-    booklore_url: str
+    booklore_url: Optional[str] = None
     booklore_api_key: Optional[str] = None
 
     # Server Configuration
