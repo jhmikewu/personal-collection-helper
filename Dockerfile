@@ -12,17 +12,18 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Create non-root user first
+RUN useradd -m -u 1000 appuser
+
+# Copy application code (including start.sh)
 COPY . .
 
-# Create non-root user
-RUN useradd -m -u 1000 appuser && \
-    chown -R appuser:appuser /app
-USER appuser
+# Set ownership and permissions
+RUN chown -R appuser:appuser /app && \
+    chmod +x /app/start.sh
 
-# Copy startup script
-COPY start.sh .
-RUN chmod +x start.sh
+# Switch to non-root user
+USER appuser
 
 # Expose port
 EXPOSE 8080
