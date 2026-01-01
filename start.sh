@@ -9,5 +9,5 @@ if [ "$1" = "cli" ]; then
     python -m collection_helper "$@"
 else
     # Run web server by default
-    python -m collection_helper.web
+    python -c "from collection_helper.web import run_server; run_server()"
 fi

@@ -192,3 +192,16 @@ if __name__ == "__main__":
         port=settings.port,
         log_level=settings.log_level.lower(),
     )
+
+
+def run_server():
+    """Run the FastAPI server - called from startup script."""
+    import uvicorn
+
+    settings = get_settings()
+    uvicorn.run(
+        app,
+        host=settings.host,
+        port=settings.port,
+        log_level=settings.log_level.lower(),
+    )

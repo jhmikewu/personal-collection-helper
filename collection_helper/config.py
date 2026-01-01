@@ -24,7 +24,7 @@ class Settings(BaseSettings):
 
     # Server Configuration
     host: str = "0.0.0.0"
-    port: int = 8080
+    port: int = 8090  # Changed from 8080 to avoid qBittorrent conflict
 
     # Logging
     log_level: str = "INFO"
