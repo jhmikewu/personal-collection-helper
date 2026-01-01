@@ -8,7 +8,11 @@
       "Bash(docker logs:*)",
       "Bash(python:*)",
       "Bash(pip install:*)",
-      "Bash(venv/Scripts/pip:*)"
+      "Bash(venv/Scripts/pip:*)",
+      "Bash(cat:*)",
+      "Bash(docker-compose -f docker-compose.dev.yml restart web)",
+      "Bash(docker compose:*)",
+      "Bash(del:*)"
     ]
   }
 }

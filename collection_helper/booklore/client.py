@@ -3,7 +3,7 @@
 from typing import List, Optional, Dict, Any
 import httpx
 from collection_helper.config import get_settings
-from collection_helper.booklore.models import BookloreBook, BookloreSeries, BookloreCollection
+from collection_helper.booklore.models import BookloreBook, BookloreSeries, BookloreCollection, BookloreLibrary
 from collection_helper.logger import get_logger
 
 logger = get_logger()
@@ -108,6 +108,32 @@ class BookloreClient:
             return book_objects
         except Exception as e:
             logger.error(f"Failed to retrieve books: {e}")
+            return []
+
+    async def get_libraries(self) -> List[BookloreLibrary]:
+        """Get all libraries from Booklore.
+
+        Returns:
+            List of libraries
+        """
+        try:
+            data = await self._request("GET", "/api/v1/libraries")
+
+            # Handle both list and paginated response
+            if isinstance(data, list):
+                libraries = data
+            else:
+                libraries = data.get("content", [])
+
+            # Log first library to see the field names
+            if libraries:
+                logger.debug(f"First library data: {libraries[0]}")
+
+            library_objects = [BookloreLibrary(**lib) for lib in libraries]
+            logger.info(f"Retrieved {len(library_objects)} libraries from Booklore")
+            return library_objects
+        except Exception as e:
+            logger.error(f"Failed to retrieve libraries: {e}")
             return []
 
     async def get_book(self, book_id: str) -> Optional[BookloreBook]:

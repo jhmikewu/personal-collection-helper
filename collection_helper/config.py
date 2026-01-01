@@ -32,6 +32,14 @@ class Settings(BaseSettings):
     # Cache Configuration
     cache_ttl: int = 3600  # seconds
 
+    # LLM Configuration for Recommendations
+    llm_provider: str = "openai"  # openai, anthropic, ollama
+    llm_api_key: Optional[str] = None
+    llm_base_url: Optional[str] = None
+    llm_model: str = "gpt-4o-mini"
+    llm_max_tokens: int = 1000
+    llm_temperature: float = 0.7
+
 
 # Global settings instance
 _settings: Optional[Settings] = None

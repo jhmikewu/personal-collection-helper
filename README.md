@@ -1,11 +1,15 @@
 # Personal Collection Helper
 
-A Python-based tool for managing media libraries across Emby and Booklore, packaged as a Docker container for easy deployment on NAS devices.
+A Python-based tool for managing media libraries across Emby and Booklore with AI-powered recommendations, packaged as a Docker container for easy deployment on NAS devices.
 
 ## Features
 
 - **Unified Search**: Search across both Emby and Booklore simultaneously
 - **Library Management**: Browse and organize your media collections
+- **AI-Powered Recommendations**: Get personalized book and video recommendations using LLMs
+  - Pattern-based suggestions aligned with your tastes
+  - Surprise recommendations to diversify your collection
+  - Separate analysis for books and videos
 - **REST API**: FastAPI-based web API for integration with other tools
 - **CLI Interface**: Command-line interface for direct interaction
 - **Statistics**: Get insights about your media collections
@@ -49,12 +53,31 @@ cp .env.example .env
 Edit `.env` with your configuration:
 
 ```bash
+# Emby Configuration
 EMBY_URL=http://your-emby-server:8096
 EMBY_API_KEY=your_emby_api_key_here
-BOOKLORE_URL=http://your-booklore-server:8080
-BOOKLORE_API_KEY=
+
+# Booklore Configuration
+BOOKLORE_URL=http://your-booklore-server:6060
+BOOKLORE_API_KEY=your_booklore_api_token
+
+# Server Configuration
+HOST=0.0.0.0
+PORT=8090
+
+# Logging
 LOG_LEVEL=INFO
+
+# LLM Configuration for Recommendations (Optional)
+LLM_PROVIDER=openai
+LLM_API_KEY=your_llm_api_key
+LLM_BASE_URL=
+LLM_MODEL=gpt-4o-mini
+LLM_MAX_TOKENS=1000
+LLM_TEMPERATURE=0.7
 ```
+
+**Note**: The `.env` file is in `.gitignore` and will NOT be uploaded to GitHub. Your API keys are safe!
 
 ### 3. Run with Docker Compose (Recommended)
 
@@ -62,7 +85,9 @@ LOG_LEVEL=INFO
 docker-compose up -d
 ```
 
-The API will be available at `http://localhost:8080`
+The API will be available at `http://localhost:8090`
+
+**Note**: Default port changed from 8080 to 8090 to avoid conflicts with qBittorrent.
 
 ### 4. Run with Docker CLI
 
@@ -70,7 +95,7 @@ The API will be available at `http://localhost:8080`
 docker build -t collection-helper .
 docker run -d \
   --name collection-helper \
-  -p 8080:8080 \
+  -p 8090:8090 \
   -v $(pwd)/config:/app/config \
   -v $(pwd)/logs:/app/logs \
   --env-file .env \
@@ -82,32 +107,39 @@ docker run -d \
 ### Web API
 
 Once running, access the interactive API documentation at:
-- **Swagger UI**: http://localhost:8080/docs
-- **ReDoc**: http://localhost:8080/redoc
+- **Swagger UI**: http://localhost:8090/docs
+- **ReDoc**: http://localhost:8090/redoc
 
 #### Example API Requests
 
 ```bash
 # Health check
-curl http://localhost:8080/health
+curl http://localhost:8090/health
 
 # Search across all collections
-curl -X POST http://localhost:8080/search \
+curl -X POST http://localhost:8090/search \
   -H "Content-Type: application/json" \
   -d '{"query": "Matrix", "emby": true, "booklore": true}'
 
+# Get AI-powered recommendations (requires LLM configuration)
+curl -X POST http://localhost:8090/recommendations \
+  -H "Content-Type: application/json" \
+  -d '{"count": 5}'
+
 # Get Emby libraries
-curl http://localhost:8080/emby/libraries
+curl http://localhost:8090/emby/libraries
 
 # Get Emby items from specific library
-curl http://localhost:8080/emby/items?library=Movies&limit=50
+curl http://localhost:8090/emby/items?library=Movies&limit=50
 
 # Get Booklore books
-curl http://localhost:8080/booklore/books?limit=100
+curl http://localhost:8090/booklore/books?limit=100
 
 # Get collection statistics
-curl http://localhost:8080/stats
+curl http://localhost:8090/stats
 ```
+
+**Note**: The recommendations endpoint generates 6 recommendations per category (5 pattern-based + 1 surprise) = 12 total with default settings. See [RECOMMENDATIONS.md](RECOMMENDATIONS.md) for details.
 
 ### Command-Line Interface
 
@@ -174,10 +206,16 @@ flake8 collection_helper tests
 | `EMBY_URL` | Yes | - | URL to your Emby server |
 | `EMBY_API_KEY` | Yes | - | Your Emby API key |
 | `BOOKLORE_URL` | Yes | - | URL to your Booklore instance |
-| `BOOKLORE_API_KEY` | No | - | Booklore API key (if required) |
+| `BOOKLORE_API_KEY` | Yes | - | Booklore API token |
 | `HOST` | No | 0.0.0.0 | Host to bind the web server to |
-| `PORT` | No | 8080 | Port for the web server |
+| `PORT` | No | 8090 | Port for the web server (changed from 8080) |
 | `LOG_LEVEL` | No | INFO | Logging level (DEBUG, INFO, WARNING, ERROR) |
+| `LLM_PROVIDER` | No | - | LLM provider for recommendations (e.g., openai, anthropic) |
+| `LLM_API_KEY` | No | - | LLM API key for recommendations feature |
+| `LLM_BASE_URL` | No | - | Custom LLM API base URL |
+| `LLM_MODEL` | No | gpt-4o-mini | LLM model to use |
+| `LLM_MAX_TOKENS` | No | 1000 | Maximum tokens for LLM responses |
+| `LLM_TEMPERATURE` | No | 0.7 | LLM temperature (0.0-1.0) |
 
 ### Getting Your Emby API Key
 
@@ -196,8 +234,14 @@ flake8 collection_helper tests
 - `POST /search` - Search across all collections
 - `GET /emby/libraries` - List Emby libraries
 - `GET /emby/items` - Get Emby media items
+- `GET /booklore/libraries` - List Booklore libraries
 - `GET /booklore/books` - Get Booklore books
 - `GET /stats` - Collection statistics
+
+### AI Recommendations
+- `POST /recommendations` - Generate personalized recommendations using LLM
+
+For detailed documentation on the recommendations feature, see [RECOMMENDATIONS.md](RECOMMENDATIONS.md).
 
 ## Development
 
@@ -213,7 +257,10 @@ collection_helper/
 ├── logger.py           # Loguru configuration
 ├── core/
 │   ├── __init__.py
-│   └── manager.py      # MediaManager orchestration
+│   ├── manager.py      # MediaManager orchestration
+│   ├── recommendations.py  # AI recommendation engine
+│   ├── llm_client.py   # LLM API client
+│   └── models.py       # Data models
 ├── emby/
 │   ├── __init__.py
 │   ├── client.py       # Emby API client
@@ -271,7 +318,7 @@ docker-compose up -d
 docker run -d \
   --name collection-helper \
   --restart unless-stopped \
-  -p 8080:8080 \
+  -p 8090:8090 \
   -v /path/to/config:/app/config \
   -v /path/to/logs:/app/logs \
   --env-file .env \

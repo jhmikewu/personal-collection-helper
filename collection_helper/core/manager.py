@@ -71,18 +71,18 @@ class MediaManager:
 
         return results
 
-    async def get_emby_libraries(self) -> List[str]:
-        """Get list of Emby library names.
+    async def get_emby_libraries(self) -> List[Any]:
+        """Get list of Emby libraries.
 
         Returns:
-            List of library names
+            List of library objects
         """
         if not self.emby:
             return []
 
         try:
             libraries = await self.emby.get_libraries()
-            return [lib.name for lib in libraries]
+            return libraries
         except Exception as e:
             logger.error(f"Failed to get Emby libraries: {e}")
             return []
@@ -158,15 +158,15 @@ class MediaManager:
                 "total_items": 0,
             },
             "booklore": {
-                "total_books": 0,
-                "collections": [],
+                "libraries": [],
+                "total_items": 0,
             },
         }
 
         if self.emby:
             try:
                 libraries = await self.emby.get_libraries()
-                stats["emby"]["libraries"] = [lib.name for lib in libraries]
+                stats["emby"]["libraries"] = [lib.model_dump(mode="json") for lib in libraries]
                 total_items = 0
                 for lib in libraries:
                     items = await self.emby.get_library_items(lib.id, limit=1000)
@@ -177,10 +177,10 @@ class MediaManager:
 
         if self.booklore:
             try:
+                libraries = await self.booklore.get_libraries()
+                stats["booklore"]["libraries"] = [lib.model_dump(mode="json") for lib in libraries]
                 books = await self.booklore.get_books(limit=1000)
-                stats["booklore"]["total_books"] = len(books)
-                collections = await self.booklore.get_collections()
-                stats["booklore"]["collections"] = [col.name for col in collections]
+                stats["booklore"]["total_items"] = len(books)
             except Exception as e:
                 logger.error(f"Failed to get Booklore stats: {e}")
 

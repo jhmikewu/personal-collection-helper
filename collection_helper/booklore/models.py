@@ -20,6 +20,23 @@ class BookloreMetadata(BaseModel):
     seriesName: Optional[str] = None
 
 
+class BookloreLibrary(BaseModel):
+    """Represents a library in Booklore."""
+
+    id: int
+    name: str
+    icon: Optional[str] = None
+    icon_type: Optional[str] = Field(None, alias="iconType")
+    file_naming_pattern: Optional[str] = Field(None, alias="fileNamingPattern")
+    watch: Optional[bool] = None
+    scan_mode: Optional[str] = Field(None, alias="scanMode")
+
+    class Config:
+        """Pydantic config."""
+
+        populate_by_name = True
+
+
 class BookloreBook(BaseModel):
     """Represents a book in Booklore."""
 
@@ -37,6 +54,7 @@ class BookloreBook(BaseModel):
     series_name: Optional[str] = None
     book_type: Optional[str] = Field(None, alias="bookType")
     library_name: Optional[str] = Field(None, alias="libraryName")
+    library_id: Optional[int] = Field(None, alias="libraryId")
     file_name: Optional[str] = Field(None, alias="fileName")
     file_size_kb: Optional[int] = Field(None, alias="fileSizeKb")
     added_on: Optional[str] = Field(None, alias="addedOn")

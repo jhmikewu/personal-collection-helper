@@ -18,7 +18,6 @@ class EmbyMediaItem(BaseModel):
     genres: List[str] = Field(default_factory=list, alias="Genres")
     studios: List[str] = Field(default_factory=list, alias="Studios")
     overview: Optional[str] = None
-    path: Optional[str] = Field(None, alias="Path")
 
     class Config:
         """Pydantic config."""
@@ -33,7 +32,6 @@ class EmbyLibrary(BaseModel):
     name: str = Field(alias="Name")
     type: str = Field(alias="Type")
     collection_type: Optional[str] = Field(None, alias="CollectionType")
-    locations: List[str] = Field(default_factory=list, alias="Locations")
 
     class Config:
         """Pydantic config."""
