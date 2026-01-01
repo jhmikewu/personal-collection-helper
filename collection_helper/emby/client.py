@@ -72,13 +72,12 @@ class EmbyClient:
             List of Emby libraries
         """
         try:
-            # Get all items and filter for CollectionFolder type
-            params = {
-                "Recursive": True,
-                "IncludeItemTypes": "CollectionFolder",
-            }
-            data = await self._request("GET", "/Users/Me/Items", params=params)
+            # Use the Library/MediaFolders endpoint to get all libraries
+            data = await self._request("GET", "/Library/MediaFolders")
             items = data.get("Items", [])
+
+            logger.debug(f"Total items returned: {len(items)}")
+
             libraries = [EmbyLibrary(**item) for item in items]
             logger.info(f"Retrieved {len(libraries)} libraries from Emby")
             return libraries

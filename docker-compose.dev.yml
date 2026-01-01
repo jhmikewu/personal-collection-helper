@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  collection-helper:
+    build: .
+    container_name: collection-helper-dev
+    network_mode: host
+    env_file:
+      - .env
+    volumes:
+      - ./config:/app/config
+      - ./logs:/app/logs
+      - ./collection_helper:/app/collection_helper  # Hot-reload for development
+    restart: unless-stopped

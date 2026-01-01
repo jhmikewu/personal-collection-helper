@@ -5,7 +5,10 @@
       "Bash(git commit:*)",
       "Bash(git rev-parse:*)",
       "Bash(git init:*)",
-      "Bash(docker logs:*)"
+      "Bash(docker logs:*)",
+      "Bash(python:*)",
+      "Bash(pip install:*)",
+      "Bash(venv/Scripts/pip:*)"
     ]
   }
 }

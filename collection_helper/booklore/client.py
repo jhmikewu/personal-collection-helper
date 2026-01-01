@@ -88,15 +88,20 @@ class BookloreClient:
         """
         try:
             params = {
-                "limit": limit,
-                "offset": offset,
+                "page": offset // limit + 1 if limit > 0 else 1,
+                "size": limit,
             }
-            data = await self._request("GET", "/api/books", params=params)
-            books = data.get("books", [])
+            data = await self._request("GET", "/api/v1/books", params=params)
 
-            # Handle different response formats
-            if isinstance(books, dict):
-                books = books.get("items", [])
+            # Handle both paginated response (dict with 'content') and direct list
+            if isinstance(data, list):
+                books = data
+            else:
+                books = data.get("content", [])
+
+            # Log first book to debug field names
+            if books:
+                logger.debug(f"First book data: {books[0]}")
 
             book_objects = [BookloreBook(**book) for book in books]
             logger.info(f"Retrieved {len(book_objects)} books from Booklore")
@@ -115,7 +120,7 @@ class BookloreClient:
             Book or None if not found
         """
         try:
-            data = await self._request("GET", f"/api/books/{book_id}")
+            data = await self._request("GET", f"/api/v1/books/{book_id}")
             return BookloreBook(**data)
         except httpx.HTTPError as e:
             logger.error(f"Failed to retrieve book {book_id}: {e}")
@@ -137,14 +142,17 @@ class BookloreClient:
         """
         try:
             params = {
-                "q": query,
-                "limit": limit,
+                "query": query,
+                "page": 0,
+                "size": limit,
             }
-            data = await self._request("GET", "/api/books/search", params=params)
-            books = data.get("books", [])
+            data = await self._request("GET", "/api/v1/books/search", params=params)
 
-            if isinstance(books, dict):
-                books = books.get("items", [])
+            # Handle both paginated response and direct list
+            if isinstance(data, list):
+                books = data
+            else:
+                books = data.get("content", [])
 
             book_objects = [BookloreBook(**book) for book in books]
             logger.info(f"Found {len(book_objects)} books matching '{query}'")
@@ -160,10 +168,10 @@ class BookloreClient:
             List of collections
         """
         try:
-            data = await self._request("GET", "/api/collections")
-            collections = [BookloreCollection(**col) for col in data.get("collections", [])]
-            logger.info(f"Retrieved {len(collections)} collections from Booklore")
-            return collections
+            # Booklore doesn't have a separate collections endpoint
+            # Return empty list for now
+            logger.info("Booklore doesn't have separate collections - using series instead")
+            return []
         except Exception as e:
             logger.error(f"Failed to retrieve collections: {e}")
             return []
@@ -175,10 +183,18 @@ class BookloreClient:
             List of series
         """
         try:
-            data = await self._request("GET", "/api/series")
-            series_list = [BookloreSeries(**series) for series in data.get("series", [])]
-            logger.info(f"Retrieved {len(series_list)} series from Booklore")
-            return series_list
+            # Try the series endpoint
+            data = await self._request("GET", "/api/v1/series")
+
+            # Handle both paginated response and direct list
+            if isinstance(data, list):
+                series_list = data
+            else:
+                series_list = data.get("content", [])
+
+            series_objects = [BookloreSeries(**series) for series in series_list]
+            logger.info(f"Retrieved {len(series_objects)} series from Booklore")
+            return series_objects
         except Exception as e:
             logger.error(f"Failed to retrieve series: {e}")
             return []
@@ -190,7 +206,7 @@ class BookloreClient:
             True if accessible, False otherwise
         """
         try:
-            await self._request("GET", "/api/health")
+            await self._request("GET", "/api/v1/healthcheck")
             logger.info("Booklore health check passed")
             return True
         except Exception as e:
